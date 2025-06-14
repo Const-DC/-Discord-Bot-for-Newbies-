@@ -1,5 +1,3 @@
-
-from code import interact
 import requests
 import discord
 from discord.ext import commands
@@ -9,6 +7,7 @@ import os
 import aiohttp
 from discord import app_commands
 import asyncio
+import random
 
 GUILD_ID = discord.Object(id=1371802271503093770)
 
@@ -51,7 +50,7 @@ async def on_message(message):
 
     if "fuck" in message.content.lower():
         await message.delete()
-        await message.channel.send(f"{message.author.mention} Senpaiiiiii very bad ;-; , i deleted the message")
+        await message.channel.send(f"{message.author.mention} Message deleted , My Lord don't speak words like that")
 
     await bot.process_commands(message)
 
@@ -136,7 +135,13 @@ async def command_list(interaction: discord.Interaction):
     6 : !dms
     7 : !reply
     8 : !poll
-    9: !stats
+    9 : !stats
+    10: !random_images
+    11: !nasa
+    12: !memes
+    13: !sincheck
+    12: !nsfw
+    
 
 
     """)
@@ -195,29 +200,146 @@ async def kick(interaction: discord.Interaction, member: discord.Member, *,
         await interaction.followup.send(f"GOT AN ERROR")
 
 
-NASA_API_KEY = "Key Here"
+@bot.command(name="nasa")
+async def nasa(ctx):
+    API_KEY = "Key"  # Replace with your API key
+    url = f"https://api.nasa.gov/planetary/apod?api_key={API_KEY}"
+    response = requests.get(url)
+    data = response.json()
 
-
-@bot.tree.command(name="space", description="Here is an image of Space ;>")
-async def space(interaction: discord.Interaction):
-    await interaction.response.defer()
-    url = f"https://api.nasa.gov/planetary/apod?api_key={NASA_API_KEY}"
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            if resp.status != 200:
-                await interaction.followup.send("NASA ghosted us 🥲")
-                return
-            data = await resp.json()
+    title = data.get("title", "NASA Picture")
+    explanation = data.get("explanation", "No explanation available.")
+    media_type = data.get("media_type", "image")
+    media_url = data.get("url", "")
 
     embed = discord.Embed(
-        title=data["title"],
-        description=data["explanation"][:2048],
-        color=discord.Color.dark_blue()
+        title=title,
+        description=explanation[:1024],
+        color=0x1e90ff
     )
-    embed.set_image(url=data["url"])
-    embed.set_footer(text=f"📅 {data['date']} • from NASA")
-    await interaction.followup.send(embed=embed)
+
+    if media_type == "image":
+        embed.set_image(url=media_url)
+    else:
+        embed.add_field(name="Media", value=f"[Click here to view the video]({media_url})", inline=False)
+
+    embed.set_footer(text="Powered by NASA APOD")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="random_images")
+async def random_images(ctx):
+    # Get the final redirected URL for a random image
+    response = requests.get("https://picsum.photos/800/600", allow_redirects=False)
+    image_url = response.headers.get("Location")  # this is where the actual image is hosted
+
+    embed = discord.Embed(title="Here is a random image~!", colour=0xff69b4)
+    embed.set_image(url=image_url)
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="memes")
+async def memes(ctx):
+    headers = {"User-Agent": "Mozilla/5.0 (meme-bot by /u/yourusername)"}
+    url_4 = "https://www.reddit.com/r/memes/.json"
+    response_4 = requests.get(url_4, headers=headers)
+    data_4 = response_4.json()
+
+    # FIXED: Get the list of posts
+    posts = data_4["data"]["children"]
+
+    # Pick a random post
+    meme = random.choice(posts)["data"]
+
+    title = meme["title"]
+    image = meme["url"]
+    ups = meme["ups"]
+    post_url = f"https://reddit.com{meme['permalink']}"
+
+    embed = discord.Embed(title=title, url=post_url, color=discord.Color.purple())
+    embed.set_image(url=image)
+    embed.set_footer(text=f"👍 {ups} upvotes")
+
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="catboys")
+async def catboys(ctx):
+    url = "https://nekos.best/api/v2/catboy"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        image_url = data["results"][0]["url"]
+
+        embed = discord.Embed(
+            title="Here’s a catboy just for you~! 😽💞",
+            colour=0xff69b4
+        )
+        embed.set_image(url=image_url)
+        await ctx.send(embed=embed)
+    else:
+        await ctx.send("Nyaa~ I couldn't fetch a catboy right now! Try again later 💔")
+
+@bot.command(name="cuddle")
+async def cuddle(ctx, member: discord.Member):
+    response = requests.get("https://nekos.best/api/v2/cuddle")
+    data = response.json()
+    image_url = data["results"][0]["url"]
+
+    embed = discord.Embed(title=f"{ctx.author.display_name} cuddles {member.display_name} 🥺", color=0xff99cc)
+    embed.set_image(url=image_url)
+    await ctx.send(embed=embed)
+
+@bot.command(name="sincheck")
+async def sincheck(ctx, member: commands.MemberConverter = None):
+    if member is None:
+        member = ctx.author
+
+    sins = ["Lust", "Gluttony", "Greed", "Sloth", "Wrath", "Envy", "Pride"]
+    sin_levels = {}
+
+    # Assign random percentages to each sin
+    for sin in sins:
+        sin_levels[sin] = random.randint(0, 100)
+
+    # Sort by highest sin
+    sorted_sins = sorted(sin_levels.items(), key=lambda x: x[1], reverse=True)
+    top_sin, top_value = sorted_sins[0]
+
+    # Build output message
+    msg = f"🩸 **{member.display_name}'s Sin Report** 🩸\n\n"
+    for sin, value in sin_levels.items():
+        msg += f"**{sin}:** {value}%\n"
+
+    msg += f"\n🔻 Most dominant sin: **{top_sin} ({top_value}%)** 🔻"
+
+    # Little roast if Lust or Pride is top
+    if top_sin == "Lust":
+        msg += "\n> Someone's been down bad lately... 😏"
+    elif top_sin == "Pride":
+        msg += "\n> You're not a god, calm down. 😐"
+
+    await ctx.send(msg)
+
+@bot.command(name="nsfw")
+async def nsfw(ctx, category: str = "waifu"):  # <- user can pick category
+    if not ctx.channel.is_nsfw():
+        await ctx.send("Only for NSFW channels!")
+        return
+
+    url = f"https://api.waifu.pics/nsfw/{category}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        image_url = response.json()["url"]
+        embed = discord.Embed(title="Here is a pic for you !! ", color=discord.Color.purple())
+        embed.set_image(url=image_url)
+        await ctx.send(embed=embed)
+    else:
+        await ctx.send("Try later! Or maybe you broke it with your filth.")
+
+
 
 
 bot.run(TOKEN, log_handler=handler, log_level=logging.DEBUG)
