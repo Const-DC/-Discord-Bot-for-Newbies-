@@ -263,7 +263,7 @@ async def memes(ctx):
     await ctx.send(embed=embed)
 
 
-@bot.command(name="catboys")
+@bot.command(name="catboys")#change the url --- api dosnt work
 async def catboys(ctx):
     url = "https://nekos.best/api/v2/catboy"
     response = requests.get(url)
@@ -281,7 +281,7 @@ async def catboys(ctx):
     else:
         await ctx.send("Nyaa~ I couldn't fetch a catboy right now! Try again later 💔")
 
-@bot.command(name="cuddle")
+@bot.command(name="cuddle")#dont forget to tag a user or else it wont work !! for eg:  !cuddle @user
 async def cuddle(ctx, member: discord.Member):
     response = requests.get("https://nekos.best/api/v2/cuddle")
     data = response.json()
